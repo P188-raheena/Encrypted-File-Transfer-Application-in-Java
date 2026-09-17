@@ -1,0 +1,110 @@
+import java.io.*;
+import java.net.*;
+import javax.crypto.AEADBadTagException;
+
+public class Server {
+
+    private static final int PORT = 5000;
+    private static final String OUTPUT_FILE = "received_file.txt";
+
+    public static void main(String[] args) {
+
+        System.out.println("========================================");
+        System.out.println("     SECURE FILE TRANSFER - SERVER");
+        System.out.println("========================================");
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+
+            System.out.println("[+] Server started.");
+            System.out.println("[+] Listening on port " + PORT);
+            System.out.println("[+] Waiting for client...");
+
+            try (Socket socket = serverSocket.accept();
+                 DataInputStream dis =
+                         new DataInputStream(socket.getInputStream())) {
+
+                System.out.println("[+] Client connected.");
+                System.out.println("[+] Receiving encrypted file...");
+
+                int fileSize = dis.readInt();
+
+                // Validate file size
+                if (fileSize <= 0) {
+                    throw new IOException(
+                            "Invalid encrypted file size."
+                    );
+                }
+
+                // Prevent extremely large memory allocation
+                final int MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+                if (fileSize > MAX_FILE_SIZE) {
+                    throw new IOException(
+                            "File is too large. Maximum allowed size is 100 MB."
+                    );
+                }
+
+                byte[] encryptedData = new byte[fileSize];
+
+                dis.readFully(encryptedData);
+
+                System.out.println("[+] Encrypted file received.");
+                System.out.println("[+] Encrypted size: "
+                        + fileSize + " bytes");
+
+                // Decrypt
+                System.out.println("[+] Decrypting file...");
+
+                byte[] decryptedData =
+                        AESUtil.decrypt(encryptedData);
+
+                System.out.println("[+] Decryption completed.");
+
+                // Save decrypted file
+                try (FileOutputStream fos =
+                             new FileOutputStream(OUTPUT_FILE)) {
+
+                    fos.write(decryptedData);
+                }
+
+                System.out.println("[+] File saved as: "
+                        + OUTPUT_FILE);
+
+                System.out.println("========================================");
+                System.out.println("       TRANSFER SUCCESSFUL ✓");
+                System.out.println("========================================");
+            }
+
+        } catch (BindException e) {
+
+            System.out.println(
+                    "[ERROR] Port " + PORT + " is already in use."
+            );
+
+        } catch (AEADBadTagException e) {
+
+            System.out.println(
+                    "[ERROR] Authentication failed."
+            );
+
+            System.out.println(
+                    "[INFO] The encrypted data may have been modified "
+                    + "or the key may be incorrect."
+            );
+
+        } catch (IOException e) {
+
+            System.out.println(
+                    "[ERROR] Network/File error: "
+                            + e.getMessage()
+            );
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "[ERROR] Decryption failed: "
+                            + e.getMessage()
+            );
+        }
+    }
+}

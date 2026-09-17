@@ -1,0 +1,5 @@
+*.class
+received_file.txt
+.vscode/
+.idea/
+*.log

@@ -2,120 +2,137 @@
 
 A secure client-server file transfer application built using **Java Socket Programming** and **AES-GCM authenticated encryption**.
 
-The application encrypts a file on the sender side, transfers the encrypted data over a TCP socket, and decrypts it on the receiver side before saving the original file.
+The application demonstrates how a file can be securely encrypted on the client side, transferred over a TCP connection, decrypted on the server side, and verified to ensure that the received file matches the original file.
 
-## 🚀 Features
+---
 
-* 🔐 AES-GCM authenticated encryption
-* 🎲 Random 12-byte IV generated for every encryption
-* 🌐 TCP client-server communication using Java Sockets
-* 📁 File transfer between sender and receiver
-* 🔓 Automatic decryption on the receiver side
-* 🛡️ Authentication tag helps detect modified encrypted data
-* 📏 Maximum file-size validation on the server
-* ⚠️ Error handling for missing files, connection failures, invalid data, and authentication failures
-* 💻 Simple command-line interface
-## 🏗️ Architecture photo
+## 📌 Project Overview
+
+Traditional file transfer over a network can expose sensitive data if the transmitted information is not protected.
+
+This project implements a secure file transfer mechanism where:
+
+1. The client reads the file.
+2. The file is encrypted using **AES-128-GCM**.
+3. A random initialization vector (IV) is generated for every transfer.
+4. The encrypted data is sent through a TCP socket.
+5. The server receives the encrypted data.
+6. The server decrypts the data using the shared encryption key.
+7. The decrypted file is saved as `received_file.txt`.
+8. The original and received files are compared to verify successful transfer.
+
+---
+
+## ✨ Features
+
+- 🔐 AES-GCM authenticated encryption
+- 🔑 AES-128 encryption using a 128-bit key
+- 🎲 Random 12-byte IV generated for every encryption
+- 🛡️ Authentication tag for detecting unauthorized modification
+- 🌐 TCP client-server communication
+- 📁 Secure file transfer
+- 🔄 Automatic encryption and decryption
+- ✅ File integrity verification
+- ⚠️ Handling of invalid or modified encrypted data
+- 🚫 Protection against oversized transfer payloads
+- 💻 Simple command-line interface
+- 📚 Demonstrates Java networking and cybersecurity concepts
+
+---
+
+## 🏗️ Architecture
 
 ![System Architecture](docs/architecture.png)
-## 🏗️ Architecture 
+
+### Communication Flow
 
 ```text
-                    SECURE FILE TRANSFER
-
- ┌─────────────────┐
- │     SENDER      │
- │   Client.java   │
- └────────┬────────┘
-          │
-          │ 1. Read file
-          ▼
- ┌─────────────────┐
- │    AES-GCM      │
- │   Encryption    │
- └────────┬────────┘
-          │
-          │ 2. Encrypted data + IV
-          ▼
-═════════════════════════════════════
-          TCP Socket / Port 5000
-═════════════════════════════════════
-          │
-          ▼
- ┌─────────────────┐
- │    RECEIVER     │
- │   Server.java   │
- └────────┬────────┘
-          │
-          │ 3. Receive encrypted data
-          ▼
- ┌─────────────────┐
- │    AES-GCM      │
- │   Decryption    │
- └────────┬────────┘
-          │
-          │ 4. Original file
-          ▼
- ┌─────────────────────┐
- │ received_file.txt   │
- └─────────────────────┘
+Original File
+     │
+     ▼
+┌───────────────┐
+│     Client    │
+└───────┬───────┘
+        │
+        ▼
+   AES-128-GCM
+ Encryption
+        │
+        ├── Random IV
+        └── Authentication Tag
+        │
+        ▼
+   TCP Socket
+        │
+        ▼
+┌───────────────┐
+│     Server    │
+└───────┬───────┘
+        │
+        ▼
+AES-GCM Decryption
+        │
+        ▼
+received_file.txt
+        │
+        ▼
+File Verification
 ```
 
-## 🔄 How It Works
-
-### Sender
-
-1. `Client.java` locates `send.txt`.
-2. The file is read into memory.
-3. `AESUtil.java` encrypts the file using AES-GCM.
-4. A fresh random IV is generated for the encryption operation.
-5. The encrypted data and IV are sent to the server through a TCP socket.
-
-### Receiver
-
-1. `Server.java` listens on port `5000`.
-2. The server accepts the client connection.
-3. It receives the encrypted data.
-4. `AESUtil.java` extracts the IV and decrypts the data.
-5. AES-GCM authentication verifies the encrypted data.
-6. The decrypted content is saved as `received_file.txt`.
+---
 
 ## 🔐 Security
 
-This project uses:
+### AES-GCM Encryption
 
-**AES-GCM (Advanced Encryption Standard - Galois/Counter Mode)**
+The project uses:
 
-AES-GCM provides:
+```text
+AES/GCM/NoPadding
+```
 
-* **Confidentiality** — the file contents are encrypted.
-* **Integrity and authentication** — unauthorized modifications to encrypted data can cause decryption to fail.
+AES-GCM provides both:
 
-A fresh random **12-byte IV** is generated for every encryption operation.
+- **Confidentiality** — protects the contents of the file from being read by unauthorized parties.
+- **Integrity and authentication** — unauthorized modification of encrypted data causes authenticated decryption to fail.
 
-### ⚠️ Key Management
+### Initialization Vector (IV)
 
-For demonstration purposes, the project currently uses a shared AES key defined in `AESUtil.java`.
+A fresh **12-byte random IV** is generated for every encryption operation.
 
-This demonstrates the encryption workflow, but a production application should **not hard-code encryption keys**.
+The IV is stored together with the encrypted data:
 
-Possible production improvements include:
+```text
+[ IV ][ Ciphertext + Authentication Tag ]
+```
 
-* Secure environment variables or secret management
-* Password-based key derivation
-* RSA/ECDH-based key exchange
-* Secure key storage
-* User authentication
+The IV does not need to be secret because it is required by the receiver to perform decryption.
 
-## 🛠️ Technologies Used
+### Authentication Tag
 
-* **Java**
-* **Java Socket Programming**
-* **TCP/IP**
-* **AES-GCM**
-* **Java Cryptography Architecture (JCA)**
-* **File I/O**
-* **Command Line**
+AES-GCM generates an authentication tag along with the ciphertext.
+
+The server verifies this tag during decryption. If the encrypted data has been modified, authenticated decryption fails.
+
+---
+
+## ⚠️ Key Management
+
+For demonstration purposes, the application currently uses a shared AES-128 key stored in the source code.
+
+This is suitable for demonstrating the encryption and transfer workflow but is **not recommended for production systems**.
+
+A production implementation should use a secure key-management mechanism such as:
+
+- Environment variables
+- Secure key storage
+- Password-based key derivation
+- Public-key cryptography
+- ECDH-based key exchange
+- RSA/ECC-based secure key exchange
+- Hardware-backed key management
+
+---
 
 ## 📂 Project Structure
 
@@ -128,74 +145,200 @@ Encrypted-File-Transfer-Application-in-Java/
 │   └── Server.java
 │
 ├── docs/
-│   └── Secure_File_Transfer_Report.pdf
+│   ├── Secure_File_Transfer_Report.pdf
+│   ├── architecture.png
+│   └── screenshots/
+│       ├── client.png
+│       ├── server.png
+│       └── verification.png
 │
 ├── send.txt
 ├── README.md
+├── LICENSE
 └── .gitignore
 ```
 
-## ▶️ How to Run
+---
 
-### 1. Open the Project Directory
+## 📸 Demo
 
-Open Command Prompt in the project root directory.
+### 1. Client — Encryption & File Transfer
 
-### 2. Compile the Java Files
+The client reads the original file, encrypts it using AES-GCM, establishes a TCP connection with the server, and sends the encrypted data.
 
-Run:
+![Client](docs/screenshots/client.png)
+
+---
+
+### 2. Server — Decryption & File Reception
+
+The server receives the encrypted payload, decrypts it using AES-GCM, and saves the resulting file as `received_file.txt`.
+
+![Server](docs/screenshots/server.png)
+
+---
+
+### 3. File Integrity Verification
+
+The original `send.txt` and decrypted `received_file.txt` are compared using the Windows `fc` command.
+
+![Verification](docs/screenshots/verification.png)
+
+The verification result:
+
+```text
+FC: no differences encountered
+```
+
+This confirms that the received file matches the original file.
+
+---
+
+## ⚙️ Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Java | Application development |
+| Java Socket Programming | Client-server communication |
+| TCP/IP | Reliable network communication |
+| AES-128-GCM | Authenticated encryption |
+| Java Cryptography Architecture | Encryption and decryption |
+| File I/O | Reading and writing files |
+| Git | Version control |
+| GitHub | Source code hosting |
+
+---
+
+## 🧩 Main Components
+
+### `AESUtil.java`
+
+Responsible for:
+
+- AES-GCM encryption
+- AES-GCM decryption
+- Random IV generation
+- Authentication tag verification
+
+---
+
+### `Client.java`
+
+Responsible for:
+
+- Reading `send.txt`
+- Encrypting the file
+- Connecting to the server
+- Sending encrypted data
+- Displaying transfer status
+
+---
+
+### `Server.java`
+
+Responsible for:
+
+- Starting the server socket
+- Accepting client connections
+- Receiving encrypted data
+- Validating the received payload
+- Decrypting the data
+- Saving `received_file.txt`
+- Handling authentication/decryption failures
+
+---
+
+## 🚀 How to Run
+
+### Prerequisites
+
+Install:
+
+- Java JDK 17 or later
+- Git
+- VS Code or any Java-compatible IDE
+
+Verify Java installation:
+
+```cmd
+java -version
+```
+
+Verify Java compiler:
+
+```cmd
+javac -version
+```
+
+---
+
+## ▶️ Step 1 — Clone the Repository
+
+```cmd
+git clone https://github.com/P188-raheena/Encrypted-File-Transfer-Application-in-Java.git
+```
+
+Move into the project:
+
+```cmd
+cd Encrypted-File-Transfer-Application-in-Java
+```
+
+---
+
+## ▶️ Step 2 — Compile the Project
 
 ```cmd
 javac src\AESUtil.java src\Client.java src\Server.java
 ```
 
-### 3. Start the Server
+If compilation is successful, the Java `.class` files will be generated inside the `src` directory.
 
-Open the first terminal and run:
+---
+
+## ▶️ Step 3 — Start the Server
+
+Open **Terminal 1**:
 
 ```cmd
 java -cp src Server
 ```
 
-Expected output:
+The server will start listening on:
 
 ```text
-========================================
-     SECURE FILE TRANSFER - SERVER
-========================================
-[+] Server started.
-[+] Listening on port 5000
-[+] Waiting for client...
+localhost:5000
 ```
 
-Keep the server terminal running.
+---
 
-### 4. Start the Client
+## ▶️ Step 4 — Start the Client
 
-Open a second terminal in the project root directory and run:
+Open **Terminal 2**.
+
+Make sure `send.txt` exists in the project root directory.
+
+Then run:
 
 ```cmd
 java -cp src Client
 ```
 
-Expected output:
+The client will:
 
 ```text
-========================================
-     SECURE FILE TRANSFER - CLIENT
-========================================
-[+] File: send.txt
-[+] File read successfully.
-[+] Encrypting file...
-[+] Encryption completed.
-[+] Connected to server.
-[+] Encrypted file sent successfully.
-========================================
-       TRANSFER COMPLETED ✓
-========================================
+Read File
+   ↓
+Encrypt File
+   ↓
+Connect to Server
+   ↓
+Send Encrypted Data
 ```
 
-### 5. Verify the Transfer
+---
+
+## ▶️ Step 5 — Verify the Received File
 
 After successful transfer, the server creates:
 
@@ -203,88 +346,243 @@ After successful transfer, the server creates:
 received_file.txt
 ```
 
-Compare the original and received files using Windows CMD:
+Compare the files using:
 
 ```cmd
 fc send.txt received_file.txt
 ```
 
-Successful verification:
+Expected result:
 
 ```text
 FC: no differences encountered
 ```
+
+---
 
 ## 🧪 Test Result
 
-The application was successfully tested using a sample `send.txt` file.
+The application was tested successfully using a sample file.
 
-The test demonstrated the complete secure transfer pipeline:
+### Test Details
 
 ```text
-Original File
-     ↓
-AES-GCM Encryption
-     ↓
-Encrypted Data + IV
-     ↓
-TCP Socket Transfer
-     ↓
-AES-GCM Decryption
-     ↓
-Received File
+Original file size      : 39 bytes
+Encrypted payload size  : 67 bytes
+Transfer protocol       : TCP
+Encryption              : AES-128-GCM
+IV size                 : 12 bytes
+Authentication tag      : 128-bit
 ```
 
-The original and decrypted files were successfully compared using:
+The server successfully:
+
+- Received the encrypted payload
+- Decrypted the file
+- Created `received_file.txt`
+- Passed file comparison verification
+
+Result:
 
 ```text
 FC: no differences encountered
 ```
 
-The test file was **39 bytes**, while the encrypted payload was **67 bytes**, demonstrating the additional IV and authentication-tag overhead introduced by AES-GCM.
+---
 
-## 📌 Current Limitations
+## 🛡️ Error Handling
 
-This is an educational/demo implementation.
+The application includes handling for several failure conditions, including:
 
-* The AES key is currently shared between the client and server.
-* The encryption key is stored in the source code for demonstration.
-* Files are currently loaded into memory rather than streamed in chunks.
-* The application currently supports one transfer per server process.
-* There is no user authentication.
-* Communication is currently implemented over a standard TCP socket without TLS.
+- File not found
+- Invalid encrypted data length
+- Oversized payloads
+- Server connection failures
+- Port already in use
+- AES-GCM authentication failures
+- Invalid or modified ciphertext
+- Network transfer errors
 
-## 🔮 Future Enhancements
+If encrypted data is modified, AES-GCM authenticated decryption can fail with an authentication/tag verification error.
 
-* 🔑 Secure key exchange using RSA or ECDH
-* 👤 User authentication
-* 📦 Large-file streaming
-* 📊 Transfer progress indicator
-* 🖥️ JavaFX graphical interface
-* 👥 Multiple simultaneous clients
-* 📜 Transfer history and logging
-* 🔒 Secure key storage
-* 🛡️ TLS-secured communication
-* ☁️ Cloud-based deployment
+---
 
-## 🎓 Learning Outcomes
+## ⚠️ Current Limitations
 
-This project demonstrates practical knowledge of:
+This project is designed primarily as an educational demonstration of secure file transfer.
 
-* Network programming
-* Client-server architecture
-* TCP sockets
-* Symmetric encryption
-* Authenticated encryption
-* Java Cryptography Architecture
-* File handling
-* Exception handling
-* Secure data transmission
+Current limitations include:
+
+- Shared encryption key is stored in the source code
+- Files are currently loaded into memory
+- Single-client transfer workflow
+- Command-line interface
+- Localhost testing by default
+- No user authentication
+- No encrypted key exchange
+- No transfer history
+- No graphical user interface
+
+---
+
+## 🚀 Future Enhancements
+
+The project can be extended with:
+
+### 🔑 Secure Key Exchange
+
+Implement:
+
+- ECDH
+- RSA
+- ECC
+
+to securely establish encryption keys between client and server.
+
+### 📦 Large File Streaming
+
+Instead of loading the complete file into memory, implement buffered streaming for large files.
+
+### 📊 Transfer Progress
+
+Add a progress indicator such as:
+
+```text
+[██████████████████░░] 90%
+```
+
+### 👥 Multiple Clients
+
+Allow the server to handle multiple clients using:
+
+- Threads
+- ExecutorService
+- Thread pools
+
+### 👤 User Authentication
+
+Add secure login/authentication before allowing file transfers.
+
+### 🖥️ Graphical User Interface
+
+Build a JavaFX interface with:
+
+- File selection
+- Encryption status
+- Transfer progress
+- Connection status
+- Transfer history
+
+### 🔒 Advanced Security
+
+Future versions can include:
+
+- Secure key storage
+- Digital signatures
+- Certificate-based authentication
+- TLS
+- Secure key exchange
+- Password-based key derivation
+
+---
+
+## 📈 Possible Production Architecture
+
+A more advanced production version could follow:
+
+```text
+Client
+   │
+   ├── User Authentication
+   │
+   ├── Secure Key Exchange
+   │
+   ▼
+Encrypted File
+   │
+   ▼
+TLS / Secure TCP Connection
+   │
+   ▼
+Server
+   │
+   ├── Authentication
+   ├── File Validation
+   ├── Decryption
+   └── Secure Storage
+```
+
+---
+
+## 🎯 Learning Outcomes
+
+This project helped demonstrate practical concepts in:
+
+- Java Socket Programming
+- Client-server architecture
+- TCP/IP networking
+- File handling
+- Symmetric encryption
+- AES-GCM authenticated encryption
+- Initialization vectors
+- Authentication tags
+- Exception handling
+- Secure data transmission
+- File integrity verification
+- Git and GitHub
+- Basic cybersecurity principles
+
+---
+
+## 📄 Project Documentation
+
+A detailed project report is available here:
+
+```text
+docs/Secure_File_Transfer_Report.pdf
+```
+
+The report contains information about:
+
+- Project objectives
+- System architecture
+- Encryption methodology
+- Network communication
+- Implementation
+- Testing
+- Security considerations
+- Future enhancements
+
+---
+
+## 🔗 Repository
+
+GitHub:
+
+https://github.com/P188-raheena/Encrypted-File-Transfer-Application-in-Java
+
+---
 
 ## 👩‍💻 Author
 
 **Raheena**
 
-B.Tech — Computer Science & Engineering
+BTech Computer Science and Engineering — CSM
 
-GitHub: **P188-raheena**
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**.
+
+See the `LICENSE` file for details.
+
+---
+
+## ⭐ Acknowledgment
+
+This project was developed as an educational implementation to understand the integration of:
+
+**Java Networking + Cryptography + Secure File Transfer**
+
+It demonstrates how encryption and authenticated communication can be incorporated into a client-server application.

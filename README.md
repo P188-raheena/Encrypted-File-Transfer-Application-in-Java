@@ -15,8 +15,10 @@ The application encrypts a file on the sender side, transfers the encrypted data
 * 📏 Maximum file-size validation on the server
 * ⚠️ Error handling for missing files, connection failures, invalid data, and authentication failures
 * 💻 Simple command-line interface
+## 🏗️ Architecture photo
 
-## 🏗️ Architecture
+![System Architecture](docs/architecture.png)
+## 🏗️ Architecture 
 
 ```text
                     SECURE FILE TRANSFER
